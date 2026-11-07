@@ -101,7 +101,7 @@
               href="{{ url_for('serve_ba_mission_evidence', submission_id=mission.submission_id) }}" target="_blank"
               rel="noreferrer"><img class="evidence-preview"
                 src="{{ url_for('serve_ba_mission_evidence', submission_id=mission.submission_id) }}"
-                alt="Bukti misi {{ mission.title }} dari {{ name }}" /></a>{% endif %}{% endif %}
+                alt="Bukti misi {{ mission.title }} dari {{ name }}" loading="lazy" decoding="async" /></a>{% endif %}{% endif %}
             {% if mission.review_note %}<p class="review-note"><b>Catatan admin:</b> {{ mission.review_note }}</p>{%
             endif %}
             {% if admin_view %}

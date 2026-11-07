@@ -849,7 +849,7 @@ def save_voucher_discounts():
 
 @app.get("/assets/<path:filename>")
 def assets(filename):
-    return send_from_directory("assets", filename)
+    return send_from_directory("assets", filename, max_age=3600)
 
 
 @app.post("/api/pemesanan")

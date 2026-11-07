@@ -34,7 +34,10 @@
   let pendingCheckoutPackage = null;
   let currentOrder = null;
   let pollTimer = null;
+  let pollAttempt = 0;
+  let pollInFlight = false;
   let paidFollowupTimer = null;
+  let paidFollowupAttempt = 0;
   let voucherDiscount = 0;
   const referralFromUrl = new URLSearchParams(window.location.search).get("ref") || "";
 
@@ -535,6 +538,12 @@
       };
       const result = await api("/api/orders", payload);
       currentOrder = result.order_id;
+      window.clearTimeout(pollTimer);
+      window.clearTimeout(paidFollowupTimer);
+      pollTimer = null;
+      paidFollowupTimer = null;
+      pollAttempt = 0;
+      paidFollowupAttempt = 0;
       checkoutModal.close();
       document.querySelector("#payment-order-id").textContent = result.order_id;
       document.querySelector("#payment-order-amount").textContent = money(result.amount);
@@ -555,7 +564,7 @@
       } catch (error) {
         message(document.querySelector("#payment-message"), error.message, "error");
       }
-      pollStatus();
+      scheduleStatusPoll();
     } catch (error) {
       if (error.status === 401) {
         checkoutModal.close();
@@ -625,6 +634,7 @@
   }
   async function retryPaidFollowups() {
     if (!currentOrder || !account) return;
+    paidFollowupTimer = null;
     try {
       const response = await fetch(`/api/orders/${encodeURIComponent(currentOrder)}`, {
         credentials: "same-origin",
@@ -633,15 +643,41 @@
       if (!response.ok || data.order?.status !== "PAID") return;
       renderPaidStatus(data);
       if (data.sheets_synced && data.email_sent) {
-        clearInterval(paidFollowupTimer);
-        paidFollowupTimer = null;
+        paidFollowupAttempt = 0;
+      } else {
+        schedulePaidFollowup();
       }
     } catch (_error) {
       // Keep retrying while the paid order's email or Sheets delivery is pending.
+      schedulePaidFollowup();
     }
   }
+  function schedulePaidFollowup() {
+    if (!currentOrder || !account || paidFollowupTimer) return;
+    const delays = [10000, 30000, 60000, 120000];
+    const delay = delays[Math.min(paidFollowupAttempt, delays.length - 1)];
+    paidFollowupAttempt += 1;
+    paidFollowupTimer = window.setTimeout(
+      retryPaidFollowups,
+      delay + Math.random() * delay * 0.2,
+    );
+  }
+  function scheduleStatusPoll() {
+    if (!currentOrder || !paymentModal.open || pollTimer) return;
+    const delays = [8000, 15000, 30000, 60000];
+    const delay = delays[Math.min(pollAttempt, delays.length - 1)];
+    pollAttempt += 1;
+    pollTimer = window.setTimeout(() => {
+      pollTimer = null;
+      pollStatus();
+    }, delay + Math.random() * delay * 0.2);
+  }
   async function pollStatus(showError = false) {
-    if (!currentOrder || !account) return;
+    if (!currentOrder || !account || pollInFlight) return;
+    window.clearTimeout(pollTimer);
+    pollTimer = null;
+    pollInFlight = true;
+    let shouldReschedule = false;
     try {
       const response = await fetch(`/api/orders/${encodeURIComponent(currentOrder)}`, {
         credentials: "same-origin",
@@ -660,21 +696,27 @@
       document.querySelector("#payment-order-status").textContent =
         statusLabels[order.status] || "Status sedang diperbarui";
       if (order.status === "PAID") {
-        clearInterval(pollTimer);
+        window.clearTimeout(pollTimer);
+        pollTimer = null;
         paymentModal.close();
         renderPaidStatus(data);
         successModal.showModal();
-        if ((!data.sheets_synced || !data.email_sent) && !paidFollowupTimer) {
-          paidFollowupTimer = setInterval(retryPaidFollowups, 5000);
+        if (!data.sheets_synced || !data.email_sent) {
+          paidFollowupAttempt = 0;
+          schedulePaidFollowup();
         }
         return;
       }
       if (["EXPIRED", "CANCELLED", "DENIED", "FAILED"].includes(order.status)) {
         document.querySelector("#payment-order-status").textContent =
           statusLabels[order.status] || "Status sedang diperbarui";
-        clearInterval(pollTimer);
+        window.clearTimeout(pollTimer);
+        pollTimer = null;
+      } else {
+        shouldReschedule = true;
       }
     } catch (error) {
+      shouldReschedule = true;
       if (showError) {
         const friendlyError =
           error instanceof TypeError
@@ -682,18 +724,20 @@
             : error.message;
         message(document.querySelector("#payment-message"), friendlyError, "error");
       }
+    } finally {
+      pollInFlight = false;
+      if (shouldReschedule) scheduleStatusPoll();
     }
   }
-  paymentModal.addEventListener("close", () => clearInterval(pollTimer));
+  paymentModal.addEventListener("close", () => {
+    window.clearTimeout(pollTimer);
+    pollTimer = null;
+  });
   function escapeHtml(value) {
     const element = document.createElement("span");
     element.textContent = value || "";
     return element.innerHTML;
   }
-  setInterval(() => {
-    if (currentOrder && paymentModal.open) pollStatus();
-  }, 4000);
-
   pendingCheckoutPackage = document.body.dataset.pendingPackage || null;
   if (document.body.dataset.authView) {
     setAuthTab(document.body.dataset.authView);
