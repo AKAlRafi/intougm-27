@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Developer Console · InTO UGM 2027</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='dev-dashboard.css', v='20261030-2') }}" />
+</head>
+<body class="dashboard-page dev-page">
+  <header class="dash-nav">
+    <a class="dash-brand" href="/">InTO <span>UGM 2027</span></a>
+    <nav>
+      <a href="/">Beranda</a>
+      <a href="/dashboard-admin">Dashboard Admin</a>
+      <a href="/dashboard-admin/ba">Dashboard BA</a>
+    </nav>
+  </header>
+  <main class="dash-shell dev-shell">
+    <section class="welcome-panel dev-welcome">
+      <div>
+        <p class="eyebrow">AKSES DEVELOPER</p>
+        <h1>Developer Console</h1>
+        <p>Kelola akun dan data operasional langsung pada database situs.</p>
+      </div>
+      <div class="dev-file-card"><span>DATABASE AKTIF</span><code>{{ db_path }}</code><small>Perubahan disimpan langsung</small></div>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="pricing-flashes">{% for category, message in messages %}<p class="dash-alert {{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% endwith %}
+
+    <section class="panel dev-panel">
+      <div class="panel-heading">
+        <div><p class="eyebrow">SQLITE · LIVE</p><h2>Tabel database</h2></div>
+        <span class="target-badge">{{ table_stats|length }} tabel</span>
+      </div>
+      <p class="dev-help">Grid ini menampilkan kolom database secara langsung. Ubah sel yang bisa diedit, lalu tekan Simpan pada barisnya. Kolom sensitif dan data pesanan dilindungi.</p>
+      <div class="dev-table-tabs">
+        {% for item in table_stats %}
+          {% if item.name in ['users','vouchers','ticket_pricing_settings','ticket_phase_prices','voucher_discount_settings','ba_missions','ba_referral_codes'] %}
+            <a class="dev-table-tab {{ 'is-active' if item.name == selected_table else '' }}" href="{{ url_for('developer_dashboard', table=item.name) }}">
+              <span>{{ {'users':'Akun pengguna','vouchers':'Voucher','ticket_pricing_settings':'Pengaturan harga','ticket_phase_prices':'Harga fase','voucher_discount_settings':'Diskon voucher','ba_missions':'Misi BA','ba_referral_codes':'Kode referral'}[item.name] }}</span><b>{{ item.count }}</b>
+            </a>
+          {% else %}
+            <div class="dev-table-tab is-readonly"><span>{{ item.name }}</span><b>{{ item.count }}</b></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="panel dev-panel dev-record-panel">
+      <div class="panel-heading">
+        <div><p class="eyebrow">{{ selected_table|upper }}</p><h2>{{ table_title }}</h2></div>
+        <span class="target-badge">Maks. 200 baris terbaru</span>
+      </div>
+      {% if selected_table == 'users' %}
+        <p class="dev-help">Ubah role akun di editor baris. Reset kata sandi berlaku langsung dan tidak memerlukan verifikasi email ulang. Kata sandi disimpan sebagai hash Argon2id, tidak pernah ditampilkan.</p>
+      {% endif %}
+      {% if rows %}
+        <div class="dev-grid-wrap"><table class="dev-grid"><thead><tr>
+          {% for name in columns %}<th>{{ name }}</th>{% endfor %}<th>Aksi</th>
+        </tr></thead><tbody>
+          {% for row in rows %}<tr>
+            {% set form_id = 'row-form-' ~ loop.index %}
+            {% for name, value in row.display_values %}<td>
+              {% set field = row.cells[name] %}
+              {% if field %}
+                {% if field.kind == 'select' %}<select form="{{ form_id }}" name="{{ field.name }}" required>
+                  {% for option in field.options %}<option value="{{ option }}" {{ 'selected' if field.value == option|string }}>{{ 'Aktif' if field.name == 'active' and option == '1' else 'Nonaktif' if field.name == 'active' else option }}</option>{% endfor %}
+                </select>{% else %}<input form="{{ form_id }}" name="{{ field.name }}" type="{{ field.kind }}" value="{{ field.value }}" {% if field.kind == 'number' %}step="1"{% endif %} {% if not field.optional %}required{% endif %} />{% endif %}
+              {% else %}<span class="dev-readonly-cell">{{ value if value is not none and value != '' else '—' }}</span>{% endif %}
+            </td>{% endfor %}
+            <td class="dev-grid-actions"><form id="{{ form_id }}" method="post" action="{{ url_for('developer_update_row', table=selected_table, row_id=row.rowid) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button class="review-button approve" type="submit">Simpan</button></form>
+              {% if selected_table == 'users' %}<details class="dev-reset"><summary>Atur sandi</summary><form method="post" action="{{ url_for('developer_reset_password', user_id=row.rowid) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="password" name="new_password" minlength="5" maxlength="256" autocomplete="new-password" placeholder="Kata sandi baru" required /><button class="review-button" type="submit">Reset</button></form></details>{% endif %}
+            </td>
+          </tr>{% endfor %}
+        </tbody></table></div>
+      {% else %}
+        <div class="empty-state">Belum ada baris pada tabel ini.</div>
+      {% endif %}
+    </section>
+    <p class="dash-foot"><a href="/">← Kembali ke situs</a><span>Halaman ini hanya untuk akun terverifikasi ber-role dev.</span></p>
+  </main>
+</body>
+</html>

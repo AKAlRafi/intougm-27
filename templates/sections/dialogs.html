@@ -1,0 +1,305 @@
+<!-- auth -->
+<dialog
+  class="ice-modal"
+  id="auth-modal"
+  aria-labelledby="auth-title"
+  {% if auth_view %}open{% endif %}
+>
+  <form method="dialog" class="modal-close-form">
+    <button class="modal-x" type="submit" aria-label="Tutup">×</button>
+  </form>
+
+  <span class="modal-kicker">AKUN INTO UGM 2027</span>
+  <h2 id="auth-title">Selamat datang,<br /><em>Sobat InTO.</em></h2>
+
+  <div class="auth-tabs">
+    <a
+      href="{{ url_for('store.auth_page', view='login') }}"
+      class="{% if auth_view != 'register' %}is-active{% endif %}"
+      data-auth-tab="login"
+      >Masuk</a
+    >
+    <a
+      href="{{ url_for('store.auth_page', view='register') }}"
+      class="{% if auth_view == 'register' %}is-active{% endif %}"
+      data-auth-tab="register"
+      >Daftar</a
+    >
+  </div>
+
+  <form
+    id="login-form"
+    class="modal-form"
+    method="post"
+    action="{{ url_for('store.login_form') }}"
+    {% if auth_view == 'register' %}hidden{% endif %}
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <label>
+      Alamat email
+      <input
+        name="email"
+        type="email"
+        autocomplete="email"
+        value="{{ auth_email if auth_view == 'login' else '' }}"
+        required
+        maxlength="254"
+      />
+    </label>
+    <label>
+      Kata sandi
+      <input
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      />
+    </label>
+    <p
+      class="form-message"
+      role="status"
+      {% if auth_view == 'login' and auth_notice %}data-state="{{ auth_notice_state }}"{% endif %}
+    >
+      {{ auth_notice if auth_view == 'login' else '' }}
+    </p>
+    <button class="button button-dark" type="submit">Masuk <span>↗</span></button>
+    <button class="text-button" type="button" id="resend-verification">
+      Kirim ulang tautan verifikasi
+    </button>
+  </form>
+
+  <form
+    id="register-form"
+    class="modal-form"
+    method="post"
+    action="{{ url_for('store.register_form') }}"
+    {% if auth_view != 'register' %}hidden{% endif %}
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <label>
+      Nama lengkap
+      <input name="full_name" autocomplete="name" required maxlength="120" />
+    </label>
+    <label>
+      Asal sekolah
+      <input name="school" autocomplete="organization" required maxlength="140" />
+    </label>
+    <label>
+      No. WhatsApp / telepon
+      <input
+        name="phone"
+        type="tel"
+        autocomplete="tel"
+        required
+        maxlength="24"
+      />
+    </label>
+    <label>
+      Alamat email aktif
+      <input name="email" type="email" autocomplete="email" required maxlength="254" />
+    </label>
+    <label>
+      Kata sandi <small>(minimal 5 karakter)</small>
+      <input
+        name="password"
+        type="password"
+        autocomplete="new-password"
+        minlength="5"
+        required
+      />
+    </label>
+    <label>
+      Ulangi kata sandi
+      <input
+        name="confirm_password"
+        type="password"
+        autocomplete="new-password"
+        minlength="5"
+        required
+      />
+    </label>
+    <label class="consent-check">
+      <input name="consent" type="checkbox" required />
+      <span
+        >Saya setuju data ini digunakan untuk mengelola akun dan pendaftaran InTO UGM 2027.</span
+      >
+    </label>
+    <p
+      class="form-message"
+      role="status"
+      {% if auth_view == 'register' and auth_notice %}data-state="{{ auth_notice_state }}"{% endif %}
+    >
+      {{ auth_notice if auth_view == 'register' else '' }}
+    </p>
+    <button class="button button-dark register-submit" type="submit">
+      <span>Daftar</span><span aria-hidden="true">↗</span>
+    </button>
+  </form>
+</dialog>
+
+<dialog
+  class="ice-modal success-modal"
+  id="registration-success-modal"
+  aria-labelledby="registration-success-title"
+>
+  <form method="dialog" class="modal-close-form">
+    <button class="modal-x" type="submit" aria-label="Tutup">×</button>
+  </form>
+  <span class="success-mark" aria-hidden="true">✓</span>
+  <span class="modal-kicker">SATU LANGKAH LAGI</span>
+  <h2 id="registration-success-title">Cek emailmu<br /><em>untuk verifikasi.</em></h2>
+  <p class="modal-lead">
+    Tautan verifikasi sudah kami kirim. Buka pesan itu untuk mengaktifkan akun. Belum terlihat?
+    Coba cek folder spam atau kirim ulang tautannya dari halaman masuk.
+  </p>
+  <button class="button button-dark" id="registration-success-login" type="button">
+    Masuk <span>↗</span>
+  </button>
+</dialog>
+
+<dialog
+  class="ice-modal checkout-modal"
+  id="checkout-modal"
+  aria-labelledby="checkout-title"
+>
+  <button class="modal-x" type="button" data-close="checkout-modal" aria-label="Tutup">×</button>
+  <span class="modal-kicker">PEMESANAN TIKET</span>
+  <h2 id="checkout-title">Paket <em id="checkout-package-name">Single</em></h2>
+  <p class="modal-lead">
+    Isi data semua peserta. Setelah pembayaran, tiket akan dikirim ke alamat email masing-masing.
+  </p>
+  <form id="checkout-form" method="post" action="/api/orders">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <div id="checkout-participants" class="checkout-participants"></div>
+    <div class="voucher-row">
+      <label>
+        Punya kode voucher?
+        <input id="voucher-code" autocomplete="off" placeholder="Masukkan kode voucher" />
+      </label>
+      <button type="button" class="button button-light" id="apply-voucher">Pakai kode</button>
+    </div>
+    <p class="form-message" id="voucher-message" role="status"></p>
+    <div class="checkout-total">
+      <span>Total</span>
+      <strong id="checkout-total">Rp48.000</strong>
+    </div>
+    <p class="form-message" id="checkout-message" role="status"></p>
+    <button class="button button-dark" type="submit">
+      Lanjut bayar <span>↗</span>
+    </button>
+  </form>
+</dialog>
+
+<dialog
+  class="ice-modal payment-modal"
+  id="payment-modal"
+  aria-labelledby="payment-title"
+>
+  <button class="modal-x" type="button" data-close="payment-modal" aria-label="Tutup">×</button>
+  <span class="modal-kicker">PEMBAYARAN · MIDTRANS</span>
+  <h2 id="payment-title">Selesaikan<br /><em>pembayaranmu.</em></h2>
+  <p class="modal-lead">
+    Pilih metode pembayaran di bawah. Statusnya diperbarui otomatis dan bisa kamu cek kapan saja.
+  </p>
+  <div class="payment-order">
+    <span>Nomor pesanan</span>
+    <strong id="payment-order-id">—</strong>
+    <span>Total</span>
+    <strong id="payment-order-amount">—</strong>
+    <span>Status</span>
+    <strong id="payment-order-status">Menunggu pembayaran</strong>
+  </div>
+  <div class="snap-embed-shell" aria-label="Pilihan metode dan petunjuk pembayaran Midtrans">
+    <div id="snap-container"></div>
+  </div>
+  <div class="payment-actions">
+    <button class="button button-light" id="check-status" type="button">Cek pembayaran</button>
+  </div>
+  <p class="form-message" id="payment-message" role="status"></p>
+</dialog>
+
+<dialog
+  class="ice-modal success-modal"
+  id="success-modal"
+  aria-labelledby="success-title"
+>
+  <span class="success-mark" aria-hidden="true">✓</span>
+  <span class="modal-kicker">PEMBAYARAN TERKONFIRMASI</span>
+  <h2 id="success-title">Pembayaran<br /><em>berhasil!</em></h2>
+  <p class="modal-lead">Tiketmu sedang disiapkan.</p>
+  <div class="ticket-list" id="ticket-list"></div>
+  <button class="button button-dark" type="button" data-close="success-modal">
+    Selesai <span>✓</span>
+  </button>
+</dialog>
+
+<!-- main_event -->
+<dialog class="ice-modal main-event-modal" id="main-event-modal" aria-labelledby="main-event-title">
+  <button class="modal-x" type="button" data-close="main-event-modal" aria-label="Tutup">×</button>
+  <span class="modal-kicker">RANGKAIAN KEGIATAN</span>
+  <div id="main-event-overview">
+    <h2 id="main-event-title">Ada Apa di <em>Main Event?</em></h2>
+    <p class="modal-lead">
+      Kenali rangkaian acara InTO UGM 2027 dan pilih kegiatan yang ingin kamu lihat.
+    </p>
+    <div class="main-event-options" aria-label="Pilihan kegiatan Main Event">
+      <button class="main-event-option" type="button" data-event-detail="tryout">
+        <span class="main-event-option-icon"><i class="bi bi-pencil-square" aria-hidden="true"></i></span>
+        <span><b>Try Out</b><small>Uji kesiapan dan kenali peluangmu</small></span><span class="main-event-arrow" aria-hidden="true">↗</span>
+      </button>
+      <button class="main-event-option" type="button" data-event-detail="fair">
+        <span class="main-event-option-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+        <span><b>University Fair</b><small>Kenali fakultas dan kehidupan kampus</small></span><span class="main-event-arrow" aria-hidden="true">↗</span>
+      </button>
+      <button class="main-event-option" type="button" data-event-detail="talkshow">
+        <span class="main-event-option-icon"><i class="bi bi-mic-fill" aria-hidden="true"></i></span>
+        <span><b>Talkshow Inspiratif</b><small>Dengarkan cerita dan inspirasi langsung</small></span><span class="main-event-arrow" aria-hidden="true">↗</span>
+      </button>
+    </div>
+  </div>
+  <div id="main-event-detail" hidden>
+    <button class="main-event-back" id="main-event-back" type="button">← Kembali</button>
+    <section class="main-event-detail-panel" data-event-panel="tryout" hidden>
+      <span class="main-event-detail-kicker">KEGIATAN MAIN EVENT</span>
+      <h2>Try Out</h2>
+      <p class="modal-lead">Latihan dan evaluasi untuk membantu persiapanmu menghadapi seleksi masuk perguruan tinggi.</p>
+      <ul>
+        <li>Pembahasan soal Try Out</li>
+        <li>Prediksi peluang masuk kampus berdasarkan hasil Try Out</li>
+        <li>Live class dan rekomendasi jurusan</li>
+        <li>Hasil, grafik nilai, dan analisis materi yang perlu dikuasai</li>
+        <li>Variasi soal UTBK/UM yang terbarui dan prediktif</li>
+        <li>Try Out ujian mandiri Saintek atau Soshum</li>
+        <li>Recorded live class</li>
+      </ul>
+    </section>
+    <section class="main-event-detail-panel" data-event-panel="fair" hidden>
+      <span class="main-event-detail-kicker">KEGIATAN MAIN EVENT</span>
+      <h2>University Fair</h2>
+      <p class="modal-lead">Kupas rasa penasaranmu tentang fakultas dan sekolah di Universitas Gadjah Mada. Kenali fasilitas akademik maupun nonakademik, program studi, kegiatan mahasiswa, beasiswa, dan kehidupan kampus langsung bersama mahasiswa UGM.</p>
+    </section>
+    <section class="main-event-detail-panel" data-event-panel="talkshow" hidden>
+      <span class="main-event-detail-kicker">KEGIATAN MAIN EVENT</span>
+      <h2>Talkshow Inspiratif</h2>
+      <p class="modal-lead">Temukan motivasi, berinteraksi secara langsung, dan bangkitkan semangatmu dalam meraih impian melalui sesi talkshow bersama pembicara inspiratif di InTO UGM 2027.</p>
+    </section>
+  </div>
+</dialog>
+
+<!-- guest_star -->
+<dialog
+  class="ice-modal guest-star-modal"
+  id="guest-star-modal"
+  aria-labelledby="guest-star-title"
+>
+  <button class="modal-x" type="button" data-close="guest-star-modal" aria-label="Tutup">
+    x
+  </button>
+  <div class="guest-star-content">
+    <div class="guest-star-photo">
+      <img src="{{ url_for('assets', filename='guest-star-mas-amba.png') }}" alt="" />
+    </div>
+    <h2 id="guest-star-title">Guest Star InTO UGM 2027!</h2>
+    <p class="guest-star-name">Mas Amba</p>
+  </div>
+</dialog>

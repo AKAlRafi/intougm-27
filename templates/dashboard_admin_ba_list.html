@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftar Brand Ambassador · InTO UGM 2027</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
+</head>
+
+<body class="dashboard-page">
+  <header class="dash-nav"><a class="dash-brand" href="/">InTO <span>UGM 2027</span></a>
+    <nav><a href="/">Beranda</a><a href="/dashboard-admin">Dashboard Admin</a><a href="/dashboard-admin/ba"
+        aria-current="page">Daftar Brand Ambassador</a></nav>
+  </header>
+  <main class="dash-shell">
+    <section class="welcome-panel">
+      <div>
+        <p class="eyebrow">PENGELOLAAN BRAND AMBASSADOR</p>
+        <h1>Daftar Brand Ambassador</h1>
+        <p>Pilih nama untuk melihat dasbor, bukti misi, dan status pemeriksaannya.</p>
+      </div><a class="dash-action" href="/dashboard-admin">Kembali ke ringkasan <span>→</span></a>
+    </section>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div
+      class="dash-alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+    {% if ambassadors %}<section class="ba-directory">{% for ba in ambassadors %}<article
+        class="panel ba-directory-card">
+        <div class="ba-directory-main"><span class="ba-avatar">{{ ba.full_name[:1]|upper }}</span>
+          <div>
+            <h2>{{ ba.full_name }}</h2>
+            <p>{{ ba.school }} · {{ ba.email }}</p>
+          </div>
+        </div>
+        <div class="ba-directory-stats"><span><b>{{ ba.paid_buyers or 0 }}</b> pembeli lunas</span><span><b>{{
+              ba.pending_missions or 0 }}</b> bukti menunggu</span><span>Kode promosi: <b>{{ ba.referral_code or 'Belum
+              dibuat' }}</b></span></div><a class="review-button approve"
+          href="{{ url_for('dashboard_admin_ba_view', ba_id=ba.id) }}">Lihat dasbor Brand Ambassador <span>→</span></a>
+      </article>{% endfor %}</section>
+    {% else %}<section class="panel empty-directory">
+      <h2>Belum ada Brand Ambassador</h2>
+      <p>Developer dapat mengubah peran akun menjadi <code>ba</code> melalui console database di <code>/dev</code>. Akun BA akan muncul di sini.</p>
+    </section>{% endif %}
+    <p class="dash-foot"><a href="/dashboard-admin">← Kembali ke ringkasan</a><span>Jumlah pembeli dihitung dari akun
+        berbeda yang sudah membayar menggunakan kode Brand Ambassador.</span></p>
+  </main>
+</body>
+
+</html>

@@ -1,0 +1,264 @@
+<!-- hero -->
+<section class="hero" id="home">
+  <img class="hero-photo" src="{{ url_for('assets', filename='into-ugm-2027-logo.png') }}"
+    alt="Ilustrasi Balairung UGM pada lambang InTO UGM 2027" />
+  <div class="hero-copy">
+    <h1>
+      InTO UGM 2027
+    </h1>
+    <p class="hero-desc">
+      Pijakan awal menjelajahi berbagai ilmu pengetahuan, peluang, dan aspirasi luas dengan semangat Mahapatih Gadjah
+      Mada dalam mengarungi tantangan dan asa untuk mencapai impianmu menjadi calon Gadjah Mada Muda!
+    </p>
+    <div class="hero-actions">
+      <a href="#paket" class="button button-dark">
+        Lihat Paket TO
+      </a>
+      <a href="#tentang" class="button button-dark">
+        Jelajahi InTO
+      </a>
+    </div>
+  </div>
+  <a class="hero-scroll-cue" href="#tentang" aria-label="Gulir ke bagian Tentang InTO UGM">
+    <i class="bi bi-chevron-double-down" aria-hidden="true"></i>
+  </a>
+  <a class="hero-credit" href="https://commons.wikimedia.org/wiki/File:Ampera_Bridge_at_Noon,_Palembang.jpg"
+    target="_blank" rel="noreferrer">
+    Foto: Gunawan Kartapranata · CC BY-SA 3.0
+  </a>
+  </div>
+</section>
+
+<!-- about -->
+<section class="intro section-wrap" id="tentang">
+  <div class="intro-body intro-feature">
+    <article class="intro-panel reveal">
+      <h2>InTO UGM?</h2>
+      <img class="intro-logo" src="{{ url_for('assets', filename='into-ugm-2027-logo.png') }}"
+        alt="Logo InTO UGM 2027" />
+      <div class="intro-text">
+        <p>
+          Berangkat dari semangat Tridharma Perguruan Tinggi Ikatan Keluarga Gadjah Mada Sumatera Selatan (IKAGAMASS
+          UGM) yang ingin mengobarkan semangat talenta muda agar memperjuangkan impian menempuh pendidikan di tanah
+          Bulaksumur. InTO UGM hadir sejak 2017 dan selalu memberikan informasi mengenai Perguruan Tinggi Negeri
+          khususnya Universitas Gadjah Mada bagi Generasi Muda Sriwijaya. Bekal dan strategi mendalam mengenai proses
+          dinamika seleksi masuk perguruan tinggi yang dikemas secara khusus untuk siswa-siswi SMA/SMK Sederajat di
+          seluruh penjuru Sumatera bagian Selatan.
+        </p>
+        <a class="text-link" href="https://www.instagram.com/ikagamass_ugm/" target="_blank" rel="noreferrer">
+          Ikuti kabar IKAGAMASS
+          <span>↗</span>
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- journey -->
+<section class="journey" id="perjalanan">
+  <div class="section-wrap journey-inner">
+    <div class="journey-head">
+      <h2>
+        Rangkaian Kegiatan
+      </h2>
+      <button class="journey-event-button" id="main-event-open" type="button">
+        Ada Apa di Main Event?
+        <span aria-hidden="true">↗</span>
+      </button>
+    </div>
+    <div class="journey-track">
+      <svg class="journey-route" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M125 330 C220 330 275 390 375 390 S525 330 625 330 S780 270 875 320" />
+        <path class="journey-route-mobile" d="M320 0 C320 33.3 680 29.2 680 62.5 C680 104.2 320 145.8 320 187.5 C320 229.2 680 270.8 680 312.5 C680 354.2 320 395.8 320 437.5 C320 470.8 500 483.3 500 500" />
+      </svg>
+      <article class="journey-stop reveal" style="--stop-x:12.5%;--node-y:330px">
+        <div class="journey-art" aria-hidden="true"><i class="bi bi-heart-fill journey-icon-community"></i></div>
+        <div class="journey-copy"><span class="journey-date">16 November 2025</span>
+          <h3>Sowan Panti<br />di Yogyakarta</h3>
+        </div>
+        <span class="journey-node" aria-hidden="true"></span>
+      </article>
+      <article class="journey-stop reveal" style="--stop-x:37.5%;--node-y:390px">
+        <div class="journey-art" aria-hidden="true"><i class="bi bi-house-heart-fill journey-icon-home"></i></div>
+        <div class="journey-copy"><span class="journey-date">28 Desember 2025</span>
+          <h3>IKAGAMASS<br />Balek Kampung</h3>
+        </div>
+        <span class="journey-node" aria-hidden="true"></span>
+      </article>
+      <article class="journey-stop reveal" style="--stop-x:62.5%;--node-y:330px">
+        <div class="journey-art" aria-hidden="true"><i class="bi bi-bus-front-fill journey-icon-roadshow"></i></div>
+        <div class="journey-copy"><span class="journey-date">5–17 Januari 2026</span>
+          <h3>Roadshow SMA di<br />Sumatera Selatan</h3>
+        </div>
+        <span class="journey-node" aria-hidden="true"></span>
+      </article>
+      <article class="journey-stop reveal" style="--stop-x:87.5%;--node-y:320px">
+        <div class="journey-art" aria-hidden="true"><i class="bi bi-calendar2-check-fill journey-icon-event"></i>
+        </div>
+        <div class="journey-copy"><span class="journey-date">25 Januari 2026</span>
+          <h3>Main Event<br />InTO UGM 2026</h3>
+        </div>
+        <span class="journey-node" aria-hidden="true"></span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- packages -->
+<section class="packages section-wrap" id="paket">
+  <div class="packages-head">
+  </div>
+  <div class="package-grid">
+    {% for package, size in [('Single', 1), ('Child-Free/Duo', 2), ('Keluarga Berencana/Trio', 3), ('Keluarga Besar/Circle', 5)] %}
+    {% if pricing.prices[package] %}
+    <article class="package-card reveal">
+      <h3>{{ package }}</h3>
+      <p class="package-price">Rp{{ '{:,.0f}'.format(pricing.prices[package]).replace(',', '.') }}</p>
+      <p>{{ 'Untuk 1 peserta' if size == 1 else 'Untuk ' ~ size ~ ' peserta' }}. Simulasi ujian, pembahasan soal, pameran kampus, prediksi peluang masuk, kelas langsung, rekomendasi jurusan, sesi berbagi, dan konsumsi.</p>
+      <a class="package-link purchase-trigger" data-package="{{ package }}"
+        href="{{ url_for('store.start_package', package_name=package) }}">Beli <span>↗</span></a>
+    </article>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<!-- archive -->
+<section class="archive section-wrap" id="arsip">
+  <div class="archive-heading">
+    <h2>
+      Dari tahun ke tahun,
+      <br />
+      <em>cerita InTO terus berlanjut.</em>
+    </h2>
+  </div>
+  <div class="archive-gallery">
+    <article class="archive-photo" tabindex="0">
+      <img src="{{ url_for('assets', filename='gallery-2020.jpg') }}" alt="Kenangan kegiatan InTO UGM tahun 2020" />
+      <span>2020</span>
+    </article>
+    <article class="archive-photo" tabindex="0">
+      <img src="{{ url_for('assets', filename='gallery-2022.jpg') }}" alt="Kenangan kegiatan InTO UGM tahun 2022" />
+      <span>2022</span>
+    </article>
+    <article class="archive-photo" tabindex="0">
+      <img src="{{ url_for('assets', filename='gallery-2023.jpg') }}" alt="Kenangan kegiatan InTO UGM tahun 2023" />
+      <span>2023</span>
+    </article>
+    <article class="archive-photo" tabindex="0">
+      <img src="{{ url_for('assets', filename='gallery-2024.jpg') }}" alt="Kenangan kegiatan InTO UGM tahun 2024" />
+      <span>2024</span>
+    </article>
+    <article class="archive-photo" tabindex="0">
+      <img src="{{ url_for('assets', filename='gallery-2025.jpg') }}" alt="Kenangan kegiatan InTO UGM tahun 2025" />
+      <span>2025</span>
+    </article>
+    <article class="archive-photo" tabindex="0">
+      <img src="{{ url_for('assets', filename='gallery-2025.jpg') }}" alt="Kenangan kegiatan InTO UGM tahun 2026" />
+      <span>2026</span>
+    </article>
+  </div>
+</section>
+
+<!-- stories -->
+<section class="stories" id="cerita">
+  <div class="section-wrap">
+    <div class="stories-head">
+      <h2>
+        Mereka pernah
+        <br />
+        <em>memulai dari sini.</em>
+      </h2>
+    </div>
+    <div class="story-track">
+      <article class="story reveal">
+        <img src="{{ url_for('assets', filename='Rajendra_Akuntansi FEB.jpg') }}"
+          alt="Rajendra, mahasiswa Akuntansi FEB UGM" />
+        <div>
+          <span>AKUNTANSI · FEB 2025</span>
+          <h3>Rajendra Wibisana</h3>
+          <blockquote>
+            “InTO UGM memberi saya banyak wawasan tentang kehidupan kuliah di PTN, terutama UGM.
+            Simulasi ujiannya juga membantu saya belajar dan mengukur kemampuan.”
+          </blockquote>
+        </div>
+      </article>
+      <article class="story reveal">
+        <img src="{{ url_for('assets', filename='Adly_TRE SV.jpeg') }}"
+          alt="Ahmad Adly Maulana, mahasiswa Teknologi Rekayasa Elektro" />
+        <div>
+          <span>TEKNOLOGI REKAYASA ELEKTRO · SV 2025</span>
+          <h3>Ahmad Adly Maulana</h3>
+          <blockquote>
+            “InTO UGM membuka wawasan saya tentang kehidupan kuliah di UGM dan membantu persiapan
+            UTBK lewat simulasi soal yang relevan.”
+          </blockquote>
+        </div>
+      </article>
+      <article class="story reveal">
+        <img src="{{ url_for('assets', filename='Affif_FK.JPG') }}" alt="M. Affif Azhar, mahasiswa Kedokteran" />
+        <div>
+          <span>KEDOKTERAN · 2024</span>
+          <h3>M. Affif Azhar</h3>
+          <blockquote>
+            “InTO UGM memberi pengetahuan baru dan membuat saya lebih mengenal UGM serta jurusan
+            yang saya jalani sekarang.”
+          </blockquote>
+        </div>
+      </article>
+    </div>
+    <div class="story-pagination" aria-label="Navigasi cerita">
+      <button type="button" aria-label="Cerita 1" aria-current="true"></button>
+      <button type="button" aria-label="Cerita 2" aria-current="false"></button>
+      <button type="button" aria-label="Cerita 3" aria-current="false"></button>
+    </div>
+  </div>
+</section>
+
+<!-- venue -->
+<section class="venue section-wrap" id="lokasi">
+  <div class="venue-head">
+    <h2>
+      Sampai jumpa
+      <br />
+      <em>di Palembang.</em>
+    </h2>
+  </div>
+  <div class="venue-frame reveal">
+    <iframe title="Peta Bima Sakti Convention Center Palembang"
+      src="https://www.google.com/maps?q=Bima+Sakti+Convention+Center%2C+Kebun+Bunga%2C+Kec.+Sukarami%2C+Kota+Palembang%2C+Sumatera+Selatan+30961&z=16&output=embed" loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade" allowfullscreen ></iframe>
+  </div>
+  <div class="venue-address">
+    <div>
+      <b>Bima Sakti Convention Center</b>
+      <span>
+        Kebun Bunga, Kec. Sukarami, Kota Palembang, Sumatera Selatan 30961
+      </span>
+    </div>
+    <a class="button button-dark"
+      href="https://www.google.com/maps/search/?api=1&amp;query=Bima+Sakti+Convention+Center%2C+Kebun+Bunga%2C+Kec.+Sukarami%2C+Kota+Palembang%2C+Sumatera+Selatan+30961"
+      target="_blank" rel="noreferrer">
+      Lihat peta
+      <span>↗</span>
+    </a>
+  </div>
+</section>
+
+<!-- partnership -->
+<section class="partnership section-wrap" id="partnership">
+  <div class="partnership-panel reveal">
+    <span class="partnership-badge">In Partnership With</span>
+    <div class="partnership-company">
+      <img class="emirates-logo" src="{{ url_for('assets', filename='emirates-logo.png') }}" alt="Emirates"/>
+      <h2></h2>
+    </div>
+    <div class="partnership-description">
+      <span class="partnership-label">TENTANG EMIRATES</span>
+      <p>
+        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Dolorum omnis consequuntur nesciunt nihil, corrupti
+        accusantium saepe laborum iste obcaecati, quam, esse sunt voluptas delectus perferendis!
+      </p>
+    </div>
+  </div>
+</section>

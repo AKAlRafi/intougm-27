@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Admin · InTO UGM 2027</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css', v='20261030-1') }}" />
+</head>
+
+<body class="dashboard-page">
+  <header class="dash-nav"><a class="dash-brand" href="/">InTO <span>UGM 2027</span></a>
+    <nav><a href="/">Beranda</a><a href="/dashboard-admin" aria-current="page">Dashboard Admin</a><a
+        href="/dashboard-admin/ba">Daftar Brand Ambassador</a></nav>
+  </header>
+  <main class="dash-shell">
+    <section class="welcome-panel admin-welcome">
+      <div>
+        <h1>Ringkasan pendaftaran</h1>
+        <p>Pantau pembelian tiket dan sumber promosi InTO UGM 2027.</p>
+      </div>
+      <div class="rank-chip"><span>PESANAN LUNAS</span><b>{{ total_paid }}</b><small>pembelian berhasil</small></div><a
+        class="dash-action" href="/dashboard-admin/ba">Lihat daftar Brand Ambassador <span>→</span></a>
+    </section>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="pricing-flashes">
+      {% for category, message in messages %}<p class="dash-alert {{ category }}">{{ message }}</p>{% endfor %}
+    </div>{% endif %}{% endwith %}
+    <section class="panel pricing-panel" id="pengaturan-harga">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">PENGELOLAAN TIKET</p>
+          <h2>Fase dan harga paket</h2>
+        </div>
+        <span class="target-badge">Aktif: {{ pricing.phase }}</span>
+      </div>
+      <p class="pricing-help">Harga yang disimpan berlaku untuk pembeli berikutnya. Isi 0 jika paket tidak tersedia pada
+        fase itu. Pesanan yang sudah dibuat tetap memakai harga awalnya.</p>
+      {% if pricing.mode == 'automatic' and not pricing.schedule_active %}<p class="dash-alert error">Saat ini tidak ada
+        jadwal yang aktif. Harga sementara mengikuti fase cadangan yang dipilih.</p>{% endif %}
+      <form class="pricing-form" method="post" action="{{ url_for('save_ticket_pricing') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <div class="pricing-controls">
+          <label>Mode harga<select name="mode">
+              <option value="manual" {{ 'selected' if pricing.mode=='manual' }}>Manual oleh admin</option>
+              <option value="automatic" {{ 'selected' if pricing.mode=='automatic' }}>Otomatis berdasarkan jadwal
+              </option>
+            </select></label>
+          <label>Fase aktif manual / cadangan<select name="manual_phase">{% for phase in phase_names %}
+              <option value="{{ phase }}" {{ 'selected' if pricing.manual_phase==phase }}>{{ phase }}</option>
+              {% endfor %}
+            </select></label>
+        </div>
+        <div class="pricing-phase-grid">
+          {% for phase in phase_names %}<fieldset class="pricing-phase">
+            <legend>{{ phase }}</legend>
+            <div class="pricing-price-grid">{% for package in package_names %}
+              <label>{{ package }} (Rp, 0 = tidak tersedia)<input type="number" name="price_{{ phase }}_{{ package }}"
+                  min="0" max="100000000" step="1000" required
+                  value="{{ phase_settings[phase].prices[package] }}" /></label>
+              {% endfor %}
+            </div>
+            <div class="pricing-time-grid"><label>Mulai (WIB)<input type="datetime-local" name="start_{{ phase }}"
+                  value="{{ phase_settings[phase].starts_at }}" /></label>
+              <label>Selesai (WIB)<input type="datetime-local" name="end_{{ phase }}"
+                  value="{{ phase_settings[phase].ends_at }}" /></label>
+            </div>
+          </fieldset>{% endfor %}
+        </div>
+        <button class="review-button approve" type="submit">Simpan harga dan fase</button>
+      </form>
+    </section>
+    <section class="panel pricing-panel" id="pengaturan-diskon">
+      <div class="panel-heading"><div><p class="eyebrow">KODE PROMOSI</p><h2>Diskon kode sekolah dan BA</h2></div></div>
+      <p class="pricing-help">Masukkan nominal potongan dalam rupiah untuk setiap paket. Contoh: harga Single Rp50.000 dan diskon Rp15.000, maka peserta membayar Rp35.000. Potongan dibatasi sebesar harga paket. Kosongkan untuk mempertahankan diskon lama per kode sekolah; kode BA yang kosong tidak memberi potongan. Perubahan berlaku untuk pesanan baru.</p>
+      <form class="pricing-form" method="post" action="{{ url_for('save_voucher_discounts') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <div class="pricing-phase-grid">
+          {% for kind, title in [('school','Kode voucher sekolah'),('ba','Kode referral BA')] %}
+            <fieldset class="pricing-phase"><legend>{{ title }}</legend><div class="pricing-price-grid">
+              {% for package in package_names %}<label>{{ package }} · harga fase aktif Rp{{ '{:,.0f}'.format(pricing.prices[package]).replace(',', '.') }}<input type="number" name="discount_{{ kind }}_{{ package }}" min="0" max="100000000" step="1000" placeholder="Rp potongan" value="{{ voucher_discounts[kind][package] if voucher_discounts[kind][package] is not none else '' }}" /></label>{% endfor %}
+            </div></fieldset>
+          {% endfor %}
+        </div>
+        <button class="review-button approve" type="submit">Simpan diskon voucher</button>
+      </form>
+    </section>
+    <section class="metric-grid admin-metrics">
+      <article class="metric-card"><span>PENDAPATAN DARI PESANAN LUNAS</span><strong>Rp{{
+          '{:,.0f}'.format(paid_revenue).replace(',', '.') }}</strong><small>dari {{ total_paid }} pesanan</small>
+      </article>
+      <article class="metric-card"><span>PESANAN BELUM LUNAS</span><strong>{{ pending_count }}</strong><small>nilai
+          pembayaran Rp{{ '{:,.0f}'.format(pending_amount).replace(',', '.') }}</small></article>
+      <article class="metric-card"><span>SEKOLAH PADA GRAFIK TERATAS</span><strong>{{ schools|length
+          }}</strong><small>diurutkan berdasarkan jumlah tiket lunas</small></article>
+    </section>
+    <section class="chart-grid">
+      <article class="panel chart-panel">
+        <p class="eyebrow">ASAL PESERTA</p>
+        <h2>Sekolah dengan peserta terbanyak</h2>{% if schools %}<div class="chart-wrap"><canvas id="schoolsChart"
+            aria-label="Grafik jumlah tiket lunas menurut sekolah"></canvas></div>{% else %}<div class="empty-state">
+          Belum ada pembelian lunas.</div>{% endif %}
+      </article>
+      <article class="panel chart-panel">
+        <p class="eyebrow">PAKET YANG DIBELI</p>
+        <h2>Jumlah pembelian tiap paket</h2>{% if packages %}<div class="chart-wrap doughnut-wrap"><canvas
+            id="packagesChart" aria-label="Grafik jumlah paket yang dibeli"></canvas></div>{% else %}<div
+          class="empty-state">Belum ada pembelian lunas.</div>{% endif %}
+      </article>
+      <article class="panel chart-panel">
+        <p class="eyebrow">STATUS PEMBAYARAN</p>
+        <h2>Sudah dibayar dan belum dibayar</h2>
+        <div class="payment-summary">
+          <div><span>Sudah dibayar</span><b>{{ payment.get('PAID', {}).get('orders', 0) }}</b><small>Rp{{
+              '{:,.0f}'.format(payment.get('PAID', {}).get('amount', 0)).replace(',', '.') }}</small></div>
+          <div><span>Belum dibayar</span><b>{{ payment.get('PENDING', {}).get('orders', 0) }}</b><small>Rp{{
+              '{:,.0f}'.format(payment.get('PENDING', {}).get('amount', 0)).replace(',', '.') }}</small></div>
+        </div>
+        <div class="chart-wrap doughnut-wrap small-chart"><canvas id="paymentChart"
+            aria-label="Grafik status pembayaran"></canvas></div>
+      </article>
+      <article class="panel chart-panel">
+        <p class="eyebrow">ASAL KODE PROMOSI</p>
+        <h2>Pembelian dari kode Brand Ambassador dan kode sekolah</h2>
+        <p class="chart-explainer">Grafik menunjukkan jumlah pesanan lunas yang memakai kode pribadi Brand Ambassador,
+          kode sekolah, atau kode promosi lainnya.</p>{% if referral %}<div class="chart-wrap doughnut-wrap"><canvas
+            id="referralChart" aria-label="Grafik pesanan lunas berdasarkan jenis kode promosi"></canvas></div>{% else
+        %}<div class="empty-state">Belum ada pesanan lunas yang memakai kode promosi.</div>{% endif %}
+      </article>
+    </section>
+    <section class="panel school-table-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">DAFTAR SEKOLAH TERATAS</p>
+          <h2>Peserta dari tiap sekolah</h2>
+        </div>
+      </div>{% if schools %}<div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Sekolah</th>
+              <th>Jumlah peserta dengan tiket lunas</th>
+            </tr>
+          </thead>
+          <tbody>{% for item in schools %}<tr>
+              <td>{{ item.school }}</td>
+              <td>{{ item.buyers }}</td>
+            </tr>{% endfor %}</tbody>
+        </table>
+      </div>{% else %}<p class="empty-state">Data sekolah akan tampil setelah transaksi pertama lunas.</p>{% endif %}
+    </section>
+    <p class="dash-foot"><a href="/">← Kembali ke situs InTO UGM</a><span>Grafik hanya menghitung pesanan yang sudah
+        dibayar, kecuali bagian “belum dibayar”.</span></p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const palette = ['#80ddf9', '#8bb9ff', '#baa7ff', '#ffca83', '#75e0c4', '#ff93ae', '#c9e887', '#efa7ff'];
+    const schools = {{ schools| tojson }}; const packages = {{ packages| tojson }}; const referrals = {{ referral| tojson }};
+    const base = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#c5dce7', usePointStyle: true, padding: 18 } } } };
+    if (document.querySelector('#schoolsChart')) new Chart(document.querySelector('#schoolsChart'), { type: 'bar', data: { labels: schools.map(x => x.school), datasets: [{ label: 'Peserta lunas', data: schools.map(x => x.buyers), backgroundColor: palette, borderRadius: 7 }] }, options: { ...base, indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { color: '#8ba7b7', precision: 0 }, grid: { color: 'rgba(158,222,247,.1)' } }, y: { ticks: { color: '#c5dce7' }, grid: { display: false } } } } });
+    if (document.querySelector('#packagesChart')) new Chart(document.querySelector('#packagesChart'), { type: 'doughnut', data: { labels: packages.map(x => x.package), datasets: [{ data: packages.map(x => x.orders), backgroundColor: palette, borderColor: '#102b3e', borderWidth: 4 }] }, options: { ...base, cutout: '66%' } });
+    new Chart(document.querySelector('#paymentChart'), { type: 'doughnut', data: { labels: ['Sudah dibayar', 'Belum dibayar', 'Status lainnya'], datasets: [{ data: [{{ payment.get('PAID', {}).get('orders', 0) }}, {{ payment.get('PENDING', {}).get('orders', 0) }},{{ payment.get('OTHER', {}).get('orders', 0) }}], backgroundColor: ['#75e0c4', '#ffca83', '#8ba7b7'], borderColor: '#102b3e', borderWidth: 4}]}, options: { ...base, cutout: '72%' }});
+    if (document.querySelector('#referralChart')) new Chart(document.querySelector('#referralChart'), { type: 'doughnut', data: { labels: referrals.map(x => x.source), datasets: [{ data: referrals.map(x => x.orders), backgroundColor: palette, borderColor: '#102b3e', borderWidth: 4 }] }, options: { ...base, cutout: '66%' } });
+  </script>
+</body>
+
+</html>

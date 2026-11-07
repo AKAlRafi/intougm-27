@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verifikasi alamat email · InTO UGM 2027</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='warna.css', v='20261016-15') }}"
+    />
+  </head>
+  <body class="verify-page">
+    <main class="ice-panel">
+      <span class="modal-kicker">AKUN INTO UGM 2027</span>
+
+      {% if success %}
+      <h1>Alamat emailmu sudah terverifikasi!</h1>
+      <p>Akunmu siap. Masuk untuk memilih paket dan melanjutkan pendaftaran.</p>
+      {% else %}
+      <h1>Tautan ini sudah tidak berlaku.</h1>
+      <p>Daftar ulang untuk meminta tautan verifikasi baru.</p>
+      {% endif %}
+
+      <a class="button button-dark" href="{{ url_for('home') }}">Kembali ke InTO</a>
+    </main>
+  </body>
+</html>

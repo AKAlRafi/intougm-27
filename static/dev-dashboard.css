@@ -1,0 +1,98 @@
+.dev-shell { max-width: 1320px; }
+.dev-welcome { align-items: center; }
+.dev-file-card {
+  display: grid;
+  gap: 7px;
+  min-width: min(360px, 100%);
+  padding: 16px 18px;
+  border: 1px solid rgba(128, 221, 249, .2);
+  border-radius: 16px;
+  background: rgba(4, 19, 31, .36);
+}
+.dev-file-card span { color: var(--cyan); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.dev-file-card code { overflow-wrap: anywhere; color: var(--text); font-size: 12px; }
+.dev-file-card small, .dev-help { color: var(--muted); }
+.dev-panel { margin-top: 24px; }
+.dev-help { max-width: 900px; line-height: 1.65; }
+.dev-table-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+.dev-table-tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background: rgba(4, 19, 31, .27);
+  font-size: 12px;
+}
+.dev-table-tab b { color: var(--cyan); }
+.dev-table-tab:hover, .dev-table-tab.is-active {
+  border-color: rgba(128, 221, 249, .55);
+  background: rgba(128, 221, 249, .1);
+}
+.dev-table-tab.is-readonly { color: var(--muted); border-style: dashed; }
+.dev-table-tab.is-readonly b { color: var(--muted); }
+.dev-record-list { display: grid; gap: 12px; margin-top: 18px; }
+.dev-grid-wrap { margin-top: 18px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+.dev-grid { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 12px; }
+.dev-grid th, .dev-grid td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.dev-grid th { position: sticky; top: 0; z-index: 1; color: var(--cyan); background: #092338; font-size: 11px; }
+.dev-grid tr:last-child td { border-bottom: 0; }
+.dev-grid input, .dev-grid select, .dev-reset input { width: 100%; min-width: 105px; min-height: 34px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--text); background: rgba(4, 19, 31, .65); font: inherit; }
+.dev-grid-actions { min-width: 110px; }
+.dev-grid-actions form, .dev-reset form { display: grid; gap: 6px; }
+.dev-grid-actions .review-button, .dev-reset .review-button { padding: 7px 10px; font-size: 11px; }
+.dev-reset { margin-top: 7px; }
+.dev-reset summary { color: var(--cyan); cursor: pointer; font-size: 11px; }
+.dev-readonly-cell { display: inline-block; max-width: 260px; overflow-wrap: anywhere; }
+.dev-record {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(4, 19, 31, .25);
+}
+.dev-record-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 12px;
+}
+.dev-record-summary div { min-width: 0; }
+.dev-record-summary span, .dev-record-summary strong { display: block; }
+.dev-record-summary span { margin-bottom: 4px; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+.dev-record-summary strong { overflow-wrap: anywhere; font-size: 13px; }
+.dev-edit-details { margin-top: 14px; border-top: 1px solid var(--line); }
+.dev-edit-details summary { padding-top: 12px; color: var(--cyan); cursor: pointer; font-weight: 700; }
+.dev-edit-form, .dev-password-form { display: grid; gap: 14px; margin-top: 14px; }
+.dev-field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.dev-field-grid label, .dev-password-form label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.dev-field-grid label small { display: inline; }
+.dev-field-grid input, .dev-field-grid select, .dev-password-form input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  background: rgba(4, 19, 31, .55);
+  font: inherit;
+}
+.dev-edit-form .review-button, .dev-password-form .review-button { justify-self: start; }
+.dev-password-form {
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: end;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 650px) {
+  .dev-welcome { align-items: stretch; flex-direction: column; }
+  .dev-file-card { min-width: 0; }
+  .dev-password-form { grid-template-columns: 1fr; }
+}

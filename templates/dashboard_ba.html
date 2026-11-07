@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Brand Ambassador</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css', v='20261017-4') }}" />
+</head>
+
+<body class="dashboard-page">
+  <header class="dash-nav"><a class="dash-brand" href="/">InTO <span>UGM 2027</span></a>
+    <nav><a href="/">Beranda</a>{% if admin_view %}<a href="{{ url_for('dashboard_admin_ba_list') }}">Daftar Brand
+        Ambassador</a>{% else %}<a href="/dashboardBA" aria-current="page">Dashboard Brand Ambassador</a>{% endif %}</nav>
+  </header>
+  <main class="dash-shell">
+    {% if admin_view %}<div class="admin-view-note">Anda sedang melihat dasbor Brand Ambassador: <b>{{ name }}</b>.
+      Periksa bukti misi di bagian bawah halaman.</div>{% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div
+      class="dash-alert {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+    <section class="welcome-panel">
+      <div>
+        <h1>Hai, {{ name }}</h1>
+        <p>{{ school }} · Ajak temanmu mengenal InTO UGM!</p>
+      </div>
+      <div class="rank-chip"><span>PENCAPAIAN BRAND AMBASSADOR</span><b>{{ 'ANDALAN' if redeemed >= 10 else 'AKTIF' if
+          redeemed >= 5 else 'PEMULA' }}</b><small>{{ redeemed }} orang memakai kodemu dan membayar</small></div>
+    </section>
+    <section class="metric-grid">
+      <article class="metric-card"><span>PEMBELI YANG SUDAH MEMBAYAR</span><strong>{{ redeemed }}</strong><small>orang
+          yang memakai kodemu</small></article>
+      <article class="metric-card"><span>POTONGAN HARGA TIKETMU</span><strong>{{ discount_percent }}%</strong><small>{{
+          'Tiket gratis!' if discount_percent == 100 else 'Potongan bertambah 5% per pesanan lunas' }}</small></article>
+      <article class="metric-card"><span>HARGA DEWEKAN SETELAH DISKON</span><strong>{{ 'GRATIS' if final_price == 0 else
+          'Rp{:,.0f}'.format(final_price).replace(',', '.') }}</strong><small>harga awal Rp48.000</small></article>
+    </section>
+    <section class="dash-grid">
+      <article class="panel progress-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">TARGET BERIKUTNYA</p>
+            <h2>Menuju tiket gratis</h2>
+          </div><span class="target-badge">{{ progress }}/10</span>
+        </div>
+        <p class="progress-caption">{{ redeemed }} dari 10 orang telah memakai kodemu dan membayar pesanannya.</p>
+        <div class="progress-track" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0"
+          aria-valuemax="10"><span style="width: {{ progress * 10 }}%"></span></div>
+        <div class="progress-foot"><span>Potongan saat ini: <b>{{ discount_percent }}%</b></span><span>10 pesanan lunas
+            = <b>TIKET GRATIS</b></span></div>
+        <p class="fine-print">Simulasi memakai harga tiket Single pada fase aktif. Setiap pesanan yang dibayar dengan kodemu
+          menambah potongan 5%, maksimal 100%.</p>
+      </article>
+      <article class="panel referral-panel">
+        {% if code %}<p class="eyebrow">KODE PROMOSI PRIBADI</p>
+        <h2>Bagikan kode ajakanmu</h2>
+        <div class="code-box"><code id="ba-code">{{ code }}</code><button type="button" class="copy-button"
+            data-copy="{{ code }}">Salin kode</button></div>
+        <div class="link-box"><input id="ba-link" readonly value="{{ referral_link }}"
+            aria-label="Tautan ajakan pribadi" /><button type="button" class="copy-button"
+            data-copy="{{ referral_link }}">Salin tautan</button></div>
+        <p class="copy-status" role="status" aria-live="polite"></p>
+        {% elif admin_view %}<p class="eyebrow">KODE PROMOSI PRIBADI</p>
+        <h2>Belum ada kode</h2>
+        <p class="mission-help">Brand Ambassador ini belum membuat kode promosi pribadi.</p>
+        {% else %}<p class="eyebrow">LANGKAH PERTAMA</p>
+        <h2>Buat kode ajakanmu sendiri</h2>
+        <p class="mission-help">Pilih kode unik yang mudah diingat. Kode ini akan dipakai teman saat memesan tiket dan
+          hanya bisa dibuat satu kali.</p>
+        <form class="code-create-form" action="{{ url_for('create_ba_referral_code') }}" method="post"><input
+            type="hidden" name="csrf_token" value="{{ csrf_token }}" /><label for="ba-code-input">Kode pilihanmu</label>
+          <div class="code-create-row"><input id="ba-code-input" name="referral_code" type="text" minlength="4"
+              maxlength="20" pattern="[A-Za-z0-9]{4,20}" autocomplete="off" autocapitalize="characters"
+              placeholder="Contoh: RAFIUGM27" required /><button class="review-button approve" type="submit">Buat
+              kode</button></div><small>Gunakan 4–20 huruf atau angka, tanpa spasi dan simbol. Pastikan ejaannya benar
+            sebelum dibuat.</small>
+        </form>
+        {% endif %}
+      </article>
+    </section>
+    <section class="dash-grid lower-grid">
+      <article class="panel quest-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">MISI DAN PEMERIKSAAN</p>
+            <h2>Daftar misi Brand Ambassador</h2>
+          </div><span class="quest-count">{{ missions|selectattr('status','equalto','APPROVED')|list|length }}/{{
+            missions|length }} disetujui</span>
+        </div>
+        <p class="mission-help">Kirim tangkapan layar atau foto sebagai bukti setiap misi. Admin akan memeriksa dan
+          menentukan apakah misi disetujui.</p>
+        <div class="quest-list">{% for mission in missions %}
+          <article class="mission-item">
+            <div class="mission-top"><span class="mission-stage">{{ mission.stage }}</span><span
+                class="mission-status {{ (mission.status or 'NONE')|lower }}">{% if mission.status == 'APPROVED'
+                %}Disetujui{% elif mission.status == 'PENDING' %}Menunggu pemeriksaan{% elif mission.status ==
+                'REJECTED' %}Perlu diperbaiki{% else %}Belum mengirim bukti{% endif %}</span></div>
+            <h3>{{ mission.title }}</h3>
+            {% if mission.submission_id %}<a class="evidence-link"
+              href="{{ url_for('serve_ba_mission_evidence', submission_id=mission.submission_id) }}" target="_blank"
+              rel="noreferrer">Lihat bukti yang dikirim ↗</a>{% if admin_view %}<a
+              href="{{ url_for('serve_ba_mission_evidence', submission_id=mission.submission_id) }}" target="_blank"
+              rel="noreferrer"><img class="evidence-preview"
+                src="{{ url_for('serve_ba_mission_evidence', submission_id=mission.submission_id) }}"
+                alt="Bukti misi {{ mission.title }} dari {{ name }}" /></a>{% endif %}{% endif %}
+            {% if mission.review_note %}<p class="review-note"><b>Catatan admin:</b> {{ mission.review_note }}</p>{%
+            endif %}
+            {% if admin_view %}
+            {% if mission.status == 'PENDING' %}<form class="review-form"
+              action="{{ url_for('review_ba_mission', submission_id=mission.submission_id) }}" method="post"><input
+                type="hidden" name="csrf_token" value="{{ csrf_token }}" /><label>Catatan untuk Brand Ambassador
+                <textarea name="review_note" maxlength="500"
+                  placeholder="Opsional: jelaskan alasan jika bukti perlu diperbaiki."></textarea></label>
+              <div><button class="review-button approve" name="decision" value="APPROVED">Setujui bukti</button><button
+                  class="review-button reject" name="decision" value="REJECTED">Minta perbaikan</button></div>
+            </form>
+            {% elif mission.submission_id %}<p class="fine-print">Bukti diperiksa pada {{ mission.reviewed_at }}.</p>{%
+            else %}<p class="fine-print">Brand Ambassador belum mengirim bukti.</p>{% endif %}
+            {% elif mission.status == 'APPROVED' %}<p class="fine-print">Admin sudah menyetujui misi ini.</p>
+            {% elif mission.status == 'PENDING' %}<p class="fine-print">Bukti sudah terkirim dan sedang menunggu
+              pemeriksaan admin.</p>
+            {% else %}<form class="evidence-form"
+              action="{{ url_for('upload_ba_mission_evidence', mission_key=mission.mission_key) }}" method="post"
+              enctype="multipart/form-data"><input type="hidden" name="csrf_token"
+                value="{{ csrf_token }}" /><label>Unggah tangkapan layar atau foto<input type="file" name="evidence"
+                  accept="image/jpeg,image/png,image/webp" required /></label><small>Format JPG, PNG, atau WEBP.
+                Maksimal 5 MB.{% if mission.status == 'REJECTED' %} Silakan kirim bukti yang sudah diperbaiki.{% endif
+                %}</small><button class="review-button approve" type="submit">Kirim bukti untuk diperiksa</button>
+            </form>{% endif %}
+          </article>{% endfor %}
+        </div>
+      </article>
+      <article class="panel activity-panel">
+        <p class="eyebrow">AKTIVITAS TERBARU</p>
+        <h2>Pesanan yang sudah dibayar</h2>
+        {% if recent_orders %}<ul class="activity-list">{% for order in recent_orders %}<li><span
+              class="activity-icon">✓</span><span><b>{{ order.package }}</b><small>{{ order.paid_at or 'Pembayaran
+                lunas' }}</small></span><strong>Lunas</strong></li>{% endfor %}</ul>{% else %}<div class="empty-state">
+          <span>✦</span>
+          <p>Belum ada pesanan lunas yang memakai kodemu. Bagikan kode atau tautan ajakanmu kepada teman.</p>
+        </div>{% endif %}
+      </article>
+    </section>
+    <p class="dash-foot"><a href="/">← Kembali ke situs InTO UGM</a><span>Jumlah dihitung dari pesanan yang sudah
+        dibayar dengan kodemu.</span></p>
+  </main>
+  <script>
+    document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(button.dataset.copy); document.querySelector('.copy-status').textContent = 'Berhasil disalin!'; }
+      catch (_) { const input = document.querySelector('#ba-link'); input.select(); document.execCommand('copy'); document.querySelector('.copy-status').textContent = 'Tautan disalin.'; }
+    }));
+  </script>
+  <script src="{{ url_for('static', filename='dashboard_missions.js', v='20261017-4') }}" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#071827" />
+    <meta name="description" content="Latihan UTBK-SNBT, kenali jurusan, dan dengar cerita kuliah di InTO UGM 2027 Palembang." />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('assets', filename='into-ugm-2027-logo.png') }}"/>
+    <title>InTO UGM 2027</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"/>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20261016-5') }}" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='refinements.css', v='20261016-6') }}"/>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='warna.css', v='20261020-1') }}"
+    />
+  </head>
+  <body
+    data-auth-view="{{ auth_view }}"
+    data-auth-notice="{{ auth_notice }}"
+    data-auth-notice-state="{{ auth_notice_state }}"
+    data-pending-package="{{ pending_package }}"
+    data-package-prices="{{ pricing.prices|tojson|forceescape }}"
+  >
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="InTO UGM 2027 beranda">
+        <img
+          class="brand-logo"
+          src="{{ url_for('assets', filename='into-ugm-2027-logo.png') }}"
+          alt=""
+        />
+      </a>
+      <button class="menu-toggle" aria-label="Buka navigasi" aria-expanded="false">☰</button>
+      <nav class="nav-links" aria-label="Navigasi utama">
+        <a href="#paket">Paket TO</a>
+        <a href="#perjalanan">Acara</a>
+        <a href="#lokasi">Lokasi</a>
+        {% if user_role == 'ba' %}<a class="nav-dashboard" data-server-rendered href="{{ url_for('dashboard_ba') }}">Dashboard Brand Ambassador</a>{% elif user_role in ('admin', 'dev') %}<a class="nav-dashboard" data-server-rendered href="{{ url_for('dashboard_admin') }}">Dashboard Admin</a>{% endif %}
+        <a class="nav-auth" id="nav-auth" href="{{ url_for('store.auth_page', view='login') }}">
+          Masuk
+        </a>
+        <a
+          class="nav-auth nav-register"
+          id="nav-register"
+          href="{{ url_for('store.auth_page', view='register') }}"
+        >
+          Daftar
+        </a>
+        <button
+          class="profile-pill"
+          id="nav-profile"
+          type="button"
+          aria-label="Keluar dari akun"
+          title="Keluar dari akun"
+          hidden
+        >
+          <span class="profile-dot"></span>
+          <b id="nav-profile-name"></b>
+          <span>Keluar</span>
+        </button>
+      </nav>
+    </header>
+    <main>
+      {% include "sections/home.html" %}
+    </main>
+    <footer>
+      <a class="brand footer-brand" href="#home">
+        <img
+          class="brand-logo"
+          src="{{ url_for('assets', filename='into-ugm-2027-logo.png') }}"
+          alt=""
+        />
+        <span class="brand-year">
+          IKAGAMASS
+          <br />
+          InTO UGM 2027
+        </span>
+      </a>
+      <p>
+        Simulasi UTBK-SNBT dan cerita kampus
+        <br />
+        untuk pelajar Sumatera Selatan.
+      </p>
+      <a
+        class="footer-social"
+        href="https://www.instagram.com/ikagamass_ugm/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        @ikagamass_ugm ↗
+      </a>
+      <span class="copyright">© 2027 IKAGAMASS · InTO UGM</span>
+    </footer>
+    {% include "sections/dialogs.html" %}
+    <script src="{{ url_for('static', filename='app.js', v='20261103-1') }}" defer></script>
+  </body>
+</html>
