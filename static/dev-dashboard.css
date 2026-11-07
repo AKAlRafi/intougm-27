@@ -14,6 +14,33 @@
 .dev-file-card small, .dev-help { color: var(--muted); }
 .dev-panel { margin-top: 24px; }
 .dev-help { max-width: 900px; line-height: 1.65; }
+.dev-code-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  align-items: end;
+  gap: 12px;
+  max-width: 100%;
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(4, 19, 31, .25);
+}
+.dev-code-form > strong, .dev-code-form > small { grid-column: 1 / -1; }
+.dev-code-form > strong { color: var(--text); }
+.dev-code-form label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.dev-code-form input, .dev-code-form select {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  background: rgba(4, 19, 31, .65);
+  font: inherit;
+}
+.dev-code-form small { color: var(--muted); }
+.dev-code-form .review-button { justify-self: start; }
 .dev-table-tabs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));

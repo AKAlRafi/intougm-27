@@ -544,10 +544,11 @@
       paymentModal.showModal();
       if (
         payload.voucher_code &&
-        result.voucher_message &&
-        result.voucher_message !== "Kode voucher berhasil dipakai."
+        result.voucher_message
       ) {
-        message(document.querySelector("#payment-message"), result.voucher_message, "error");
+        // Order creation rejects invalid codes on the server. Any message returned
+        // with a created order (including BA-specific wording) confirms acceptance.
+        message(document.querySelector("#payment-message"), result.voucher_message, "success");
       }
       try {
         await mountSnap(result.snap_url, result.snap_token);

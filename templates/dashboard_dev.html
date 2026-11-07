@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow" />
   <title>Developer Console · InTO UGM 2027</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='dev-dashboard.css', v='20261030-2') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='dev-dashboard.css', v='20261107-1') }}" />
 </head>
 <body class="dashboard-page dev-page">
   <header class="dash-nav">
@@ -57,6 +57,31 @@
       </div>
       {% if selected_table == 'users' %}
         <p class="dev-help">Ubah role akun di editor baris. Reset kata sandi berlaku langsung dan tidak memerlukan verifikasi email ulang. Kata sandi disimpan sebagai hash Argon2id, tidak pernah ditampilkan.</p>
+      {% endif %}
+      {% if selected_table == 'ba_referral_codes' %}
+        <form class="dev-code-form" method="post" action="{{ url_for('developer_create_ba_code') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <strong>Buat atau ganti kode BA</strong><br />
+          <label>Brand Ambassador
+            <select name="ba_user_id" required>
+              <option value="">Pilih akun BA</option>
+              {% for ba in ba_accounts %}<option value="{{ ba.id }}">{{ ba.full_name }} · {{ ba.email }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>Kode baru <input name="code" type="text" minlength="4" maxlength="20" pattern="[A-Za-z0-9]{4,20}" required /></label>
+          <button class="review-button approve" type="submit">Aktifkan kode BA</button>
+          <small>Kode aktif sebelumnya dinonaktifkan dan tetap disimpan untuk pencatatan pesanan lama.</small>
+        </form>
+      {% elif selected_table == 'vouchers' %}
+        <form class="dev-code-form" method="post" action="{{ url_for('developer_create_school_code') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <strong>Tambah kode referral sekolah</strong><br />
+          <label>Kode <input name="code" type="text" minlength="4" maxlength="20" pattern="[A-Za-z0-9]{4,20}" required /></label>
+          <label>Potongan (rupiah) <input name="discount_amount" type="number" min="0" max="100000000" step="1000" required /></label>
+          <label>Berlaku sampai <input name="expires_at" type="datetime-local" required /></label>
+          <label>Kuota pemakaian (kosongkan untuk tanpa batas) <input name="usage_limit" type="number" min="1" max="1000000" /></label>
+          <button class="review-button approve" type="submit">Tambah kode sekolah</button>
+        </form>
       {% endif %}
       {% if rows %}
         <div class="dev-grid-wrap"><table class="dev-grid"><thead><tr>

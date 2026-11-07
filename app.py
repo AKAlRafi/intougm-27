@@ -114,6 +114,7 @@ DEV_EDITABLE_COLUMNS = {
         "email": ("email", 254), "role": ("select", ("user", "ba", "admin", "dev")),
     },
     "vouchers": {
+        "code": ("code", 20),
         "discount_amount": ("integer", (0, 100_000_000)),
         "expires_at": ("text", 40), "active": ("select", ("0", "1")),
         "referral_type": ("select", ("other", "school", "ba")),
@@ -134,7 +135,9 @@ DEV_EDITABLE_COLUMNS = {
         "stage": ("text", 80), "title": ("text", 180),
         "sort_order": ("integer", (0, 1_000_000)),
     },
-    "ba_referral_codes": {"active": ("select", ("0", "1"))},
+    "ba_referral_codes": {
+        "code": ("code", 20), "active": ("select", ("0", "1")),
+    },
 }
 
 DEV_TABLE_TITLES = {
@@ -224,6 +227,11 @@ def _dev_database_value(table, column, raw_value):
         if len(value) > rule or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value):
             raise ValueError("Format email tidak valid.")
         return value.lower()
+    if kind == "code":
+        value = value.upper()
+        if not BA_CODE_RE.fullmatch(value) or len(value) > rule:
+            raise ValueError("Kode harus terdiri dari 4–20 huruf atau angka, tanpa spasi atau simbol.")
+        return value
     raise ValueError("Jenis data tidak didukung.")
 
 
@@ -253,6 +261,9 @@ def developer_dashboard():
         rows = db.execute(
             f'SELECT rowid AS "__dev_rowid__", * FROM "{selected_table}" ORDER BY rowid DESC LIMIT 200'
         ).fetchall()
+        ba_accounts = db.execute(
+            "SELECT id,full_name,email FROM users WHERE role='ba' ORDER BY full_name COLLATE NOCASE"
+        ).fetchall()
         editable_rows = []
         for row in rows:
             controls = []
@@ -280,6 +291,7 @@ def developer_dashboard():
         table_title=DEV_TABLE_TITLES[selected_table], rows=editable_rows, columns=display_columns,
         csrf_token=session.setdefault("csrf_token", secrets.token_urlsafe(32)),
         db_path=app.config["INTO_DATABASE"],
+        ba_accounts=[dict(row) for row in ba_accounts],
     ))
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
@@ -313,11 +325,48 @@ def developer_update_row(table, row_id):
                 flash("Minimal harus ada satu akun dev. Berikan role dev ke akun lain terlebih dahulu.", "error")
                 return redirect(url_for("developer_dashboard", table=table))
         assignments = ",".join(f'"{column}"=?' for column in fields)
-        db.execute(f'UPDATE "{table}" SET {assignments} WHERE rowid=?', (*values.values(), row_id))
+        if table == "ba_referral_codes":
+            old_code = existing["code"]
+            new_code = values["code"]
+            collision = db.execute("SELECT 1 FROM vouchers WHERE code=? COLLATE NOCASE", (new_code,)).fetchone()
+            if collision:
+                raise ValueError("Kode sudah dipakai sebagai voucher. Gunakan kode lain.")
+            if values["active"]:
+                db.execute("UPDATE ba_referral_codes SET active=0 WHERE ba_user_id=? AND rowid<>?",
+                           (existing["ba_user_id"], row_id))
+            db.execute(f'UPDATE "{table}" SET {assignments} WHERE rowid=?', (*values.values(), row_id))
+            if old_code.casefold() != new_code.casefold():
+                # Retain the old value as inactive so past orders stay attributed to this BA.
+                db.execute("INSERT INTO ba_referral_codes(code,ba_user_id,active,created_at) VALUES(?,?,0,?)",
+                           (old_code, existing["ba_user_id"], existing["created_at"]))
+            active_code = db.execute("""SELECT code FROM ba_referral_codes
+                WHERE ba_user_id=? AND active=1 ORDER BY created_at DESC LIMIT 1""",
+                (existing["ba_user_id"],)).fetchone()
+            db.execute("UPDATE users SET referral_code=? WHERE id=?",
+                       (active_code["code"] if active_code else None, existing["ba_user_id"]))
+        elif table == "vouchers":
+            old_code = existing["code"]
+            new_code = values["code"]
+            collision = db.execute("SELECT 1 FROM ba_referral_codes WHERE code=? COLLATE NOCASE", (new_code,)).fetchone()
+            if collision:
+                raise ValueError("Kode sudah dipakai sebagai kode referral BA. Gunakan kode lain.")
+            db.execute(f'UPDATE "{table}" SET {assignments} WHERE rowid=?', (*values.values(), row_id))
+            if old_code.casefold() != new_code.casefold():
+                # Keep a disabled historical entry for orders that used the previous code.
+                db.execute("""INSERT INTO vouchers(code,discount_amount,expires_at,active,referral_type,usage_limit)
+                    VALUES(?,?,?,0,?,?)""",
+                    (old_code, existing["discount_amount"], existing["expires_at"],
+                     existing["referral_type"], existing["usage_limit"]))
+        else:
+            db.execute(f'UPDATE "{table}" SET {assignments} WHERE rowid=?', (*values.values(), row_id))
         db.commit()
     except sqlite3.IntegrityError:
         db.rollback()
         flash("Perubahan gagal karena nilainya bentrok dengan data lain atau melanggar relasi database.", "error")
+        return redirect(url_for("developer_dashboard", table=table))
+    except ValueError as exc:
+        db.rollback()
+        flash(str(exc), "error")
         return redirect(url_for("developer_dashboard", table=table))
     except Exception:
         db.rollback()
@@ -349,6 +398,83 @@ def developer_reset_password(user_id):
     return redirect(url_for("developer_dashboard", table="users"))
 
 
+@app.post("/dev/referral-codes/ba")
+@dev_required
+@csrf_required
+def developer_create_ba_code():
+    try:
+        code = _dev_database_value("ba_referral_codes", "code", request.form.get("code", ""))
+        ba_user_id = int(request.form.get("ba_user_id", ""))
+    except (ValueError, TypeError):
+        flash("Pilih akun BA yang valid dan masukkan kode 4–20 huruf atau angka.", "error")
+        return redirect(url_for("developer_dashboard", table="ba_referral_codes"))
+    db = _dashboard_db()
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        ba = db.execute("SELECT id FROM users WHERE id=? AND role='ba'", (ba_user_id,)).fetchone()
+        if not ba:
+            raise ValueError("Akun yang dipilih bukan Brand Ambassador.")
+        if (db.execute("SELECT 1 FROM ba_referral_codes WHERE code=? COLLATE NOCASE", (code,)).fetchone()
+                or db.execute("SELECT 1 FROM vouchers WHERE code=? COLLATE NOCASE", (code,)).fetchone()):
+            raise ValueError("Kode sudah dipakai. Pilih kode yang lain.")
+        # Keep historical codes for reporting but allow one active shareable code per BA.
+        db.execute("UPDATE ba_referral_codes SET active=0 WHERE ba_user_id=? AND active=1", (ba_user_id,))
+        db.execute("INSERT INTO ba_referral_codes(code,ba_user_id,active,created_at) VALUES(?,?,1,?)",
+                   (code, ba_user_id, datetime.now(timezone.utc).isoformat()))
+        db.execute("UPDATE users SET referral_code=? WHERE id=?", (code, ba_user_id))
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        flash(str(exc), "error")
+        return redirect(url_for("developer_dashboard", table="ba_referral_codes"))
+    except sqlite3.IntegrityError:
+        db.rollback()
+        flash("Kode baru saja dipakai atau bertabrakan dengan data lain. Coba kode berbeda.", "error")
+        return redirect(url_for("developer_dashboard", table="ba_referral_codes"))
+    finally:
+        db.close()
+    flash(f"Kode referral {code} aktif untuk Brand Ambassador yang dipilih.", "success")
+    return redirect(url_for("developer_dashboard", table="ba_referral_codes"))
+
+
+@app.post("/dev/referral-codes/sekolah")
+@dev_required
+@csrf_required
+def developer_create_school_code():
+    try:
+        code = _dev_database_value("vouchers", "code", request.form.get("code", ""))
+        discount_amount = _dev_database_value("vouchers", "discount_amount", request.form.get("discount_amount", ""))
+        usage_limit = _dev_database_value("vouchers", "usage_limit", request.form.get("usage_limit", ""))
+        expires_input = request.form.get("expires_at", "").strip()
+        expires = datetime.fromisoformat(_phase_datetime_local(expires_input))
+        if expires <= datetime.now(timezone.utc):
+            raise ValueError("Masa berlaku harus berada di waktu mendatang.")
+    except (ValueError, TypeError):
+        flash("Isi kode, diskon, masa berlaku mendatang, dan kuota dengan benar.", "error")
+        return redirect(url_for("developer_dashboard", table="vouchers"))
+    db = _dashboard_db()
+    try:
+        db.execute("BEGIN IMMEDIATE")
+        if (db.execute("SELECT 1 FROM vouchers WHERE code=? COLLATE NOCASE", (code,)).fetchone()
+                or db.execute("SELECT 1 FROM ba_referral_codes WHERE code=? COLLATE NOCASE", (code,)).fetchone()):
+            raise ValueError("Kode sudah dipakai. Pilih kode yang lain.")
+        db.execute("""INSERT INTO vouchers(code,discount_amount,expires_at,active,referral_type,usage_limit)
+            VALUES(?,?,?,1,'school',?)""", (code, discount_amount, expires.isoformat(), usage_limit))
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        flash(str(exc), "error")
+        return redirect(url_for("developer_dashboard", table="vouchers"))
+    except sqlite3.IntegrityError:
+        db.rollback()
+        flash("Kode baru saja dipakai atau bertabrakan dengan data lain. Coba kode berbeda.", "error")
+        return redirect(url_for("developer_dashboard", table="vouchers"))
+    finally:
+        db.close()
+    flash(f"Kode sekolah {code} berhasil ditambahkan dan langsung aktif.", "success")
+    return redirect(url_for("developer_dashboard", table="vouchers"))
+
+
 @app.get("/dashboardBA")
 @ba_required
 def dashboard_ba():
@@ -361,7 +487,10 @@ def _render_ba_dashboard(ba_id, admin_view):
     db = _dashboard_db()
     try:
         profile = db.execute(
-            "SELECT id,full_name,school,referral_code FROM users WHERE id=? AND role='ba'", (ba_id,)
+            """SELECT id,full_name,school,
+                (SELECT code FROM ba_referral_codes
+                 WHERE ba_user_id=users.id AND active=1 ORDER BY created_at DESC LIMIT 1) AS referral_code
+                FROM users WHERE id=? AND role='ba'""", (ba_id,)
         ).fetchone()
         if not profile:
             abort(404)
@@ -412,10 +541,11 @@ def create_ba_referral_code():
     db = _dashboard_db()
     try:
         db.execute("BEGIN IMMEDIATE")
-        user = db.execute("SELECT role,referral_code FROM users WHERE id=?", (session["user_id"],)).fetchone()
+        user = db.execute("SELECT role FROM users WHERE id=?", (session["user_id"],)).fetchone()
         if not user or user["role"] != "ba":
             abort(403)
-        if user["referral_code"]:
+        if db.execute("SELECT 1 FROM ba_referral_codes WHERE ba_user_id=? AND active=1 LIMIT 1",
+                      (session["user_id"],)).fetchone():
             flash("Kamu sudah memiliki kode promosi. Kode yang sudah dibuat tidak dapat diganti.", "info")
             return redirect(url_for("dashboard_ba"))
         if (db.execute("SELECT 1 FROM ba_referral_codes WHERE code=?", (code,)).fetchone()
@@ -441,7 +571,10 @@ def create_ba_referral_code():
 def dashboard_admin_ba_list():
     db = _dashboard_db()
     try:
-        ambassadors = db.execute("""SELECT u.id,u.full_name,u.school,u.email,u.referral_code,
+        ambassadors = db.execute("""SELECT u.id,u.full_name,u.school,u.email,
+            (SELECT rc_active.code FROM ba_referral_codes rc_active
+             WHERE rc_active.ba_user_id=u.id AND rc_active.active=1
+             ORDER BY rc_active.created_at DESC LIMIT 1) AS referral_code,
             COUNT(DISTINCT CASE WHEN o.status='PAID' THEN o.user_id END) AS paid_buyers,
               COUNT(DISTINCT CASE WHEN s.status='PENDING' THEN s.id END) AS pending_missions
             FROM users u LEFT JOIN ba_referral_codes rc ON rc.ba_user_id=u.id
